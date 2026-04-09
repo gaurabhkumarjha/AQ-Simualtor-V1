@@ -11,7 +11,7 @@ import {
 import Footer from "../components/Footer/Footer";
 
 const Home = () => {
-    // Initialize 10 zones
+    // 10 zones
     const [zones, setZones] = useState(
         Array.from({ length: 10 }, () => ({
             pop: 0,
@@ -27,7 +27,7 @@ const Home = () => {
         netReduction: 0,
     });
 
-    // Handle input change (SAFE)
+    // Update input
     const updateZone = (index, key, value) => {
         const updated = [...zones];
         updated[index][key] =
@@ -35,7 +35,7 @@ const Home = () => {
         setZones(updated);
     };
 
-    // Auto calculation (CLEAN LOGIC - FIX 4)
+    // Calculation (unchanged logic)
     useEffect(() => {
         const totalPop = zones.reduce(
             (sum, z) => sum + Number(z.pop || 0),
@@ -84,39 +84,43 @@ const Home = () => {
 
     return (
         <>
-
             <Container size="xl" py="md">
                 <Text size="xl" fw={700} ta="center" mb="md">
                     -- AQ Simulator V1 --
                 </Text>
 
-                {/* TABLE CARD */}
+                {/* TABLE */}
                 <Card shadow="md" p="md" radius="lg" withBorder>
-                    {/* <Text size="sm" c="dimmed" mb="xs">
+                    <Text size="sm" c="dimmed" mb="xs">
                         Green cells are inputs. Use sliders to adjust reduction.
-                    </Text> */}
+                    </Text>
 
                     <div style={{ overflowX: "auto" }}>
                         <Table
                             striped
-                            highlightOnHover
                             withColumnBorders
-                            verticalSpacing="sm"
+                            highlightOnHover
+                            fontSize="md"
+                            styles={{
+                                th: { textAlign: "center" },
+                                td: { textAlign: "center" },
+                            }}
                         >
-                            <thead
-                                style={{
-                                    position: "sticky",
-                                    top: 0,
-                                    background: "#f8f9fa",
-                                    zIndex: 1,
-                                }}
-                            >
+                            <thead>
                                 <tr>
-                                    <th>Zone</th>
-                                    <th>Population (mil)</th>
-                                    <th>Avg Conc (µg/m³)</th>
-                                    <th style={{ width: 220 }}>% Reduction</th>
-                                    <th>New Zone Avg</th>
+                                    <th style={{ width: 80, fontSize: "16px" }}>Zone</th>
+                                    <th style={{ width: 120, fontSize: "16px" }}>
+                                        Population (millions)
+                                    </th>
+                                    <th style={{ width: 120, fontSize: "16px" }}>
+                                        Avg Conc (µg/m³)
+                                    </th>
+                                    <th style={{ width: 220, fontSize: "16px" }}>
+                                        % Reduction
+                                    </th>
+                                    <th style={{ width: 120, fontSize: "16px" }}>
+                                        New Zone Avg
+                                    </th>
                                 </tr>
                             </thead>
 
@@ -134,7 +138,7 @@ const Home = () => {
                                                 Z{index + 1}
                                             </td>
 
-                                            {/* INPUT STYLE (GREEN LIKE EXCEL) */}
+                                            {/* Population */}
                                             <td style={{ background: "#e6f4ea" }}>
                                                 <NumberInput
                                                     value={zone.pop}
@@ -142,9 +146,10 @@ const Home = () => {
                                                     hideControls
                                                     styles={{
                                                         input: {
-                                                            // textAlign: "right",
-                                                            // background: "transparent",
-                                                            border: "none",
+                                                            textAlign: "center",
+                                                            fontSize: "16px",
+                                                            background: "transparent",
+                                                            // border: "none",
                                                         },
                                                     }}
                                                     onChange={(val) =>
@@ -153,6 +158,7 @@ const Home = () => {
                                                 />
                                             </td>
 
+                                            {/* Avg Conc */}
                                             <td style={{ background: "#e6f4ea" }}>
                                                 <NumberInput
                                                     value={zone.conc}
@@ -160,10 +166,10 @@ const Home = () => {
                                                     hideControls
                                                     styles={{
                                                         input: {
-                                                            // textAlign: "right",
-                                                            // background: "transparent",
-                                                            border: "none",
-
+                                                            textAlign: "center",
+                                                            fontSize: "16px",
+                                                            background: "transparent",
+                                                            // border: "none",
                                                         },
                                                     }}
                                                     onChange={(val) =>
@@ -172,7 +178,7 @@ const Home = () => {
                                                 />
                                             </td>
 
-                                            {/* SLIDER UI */}
+                                            {/* Slider */}
                                             <td>
                                                 <div style={{ display: "flex", gap: 10 }}>
                                                     <Slider
@@ -182,18 +188,17 @@ const Home = () => {
                                                         }
                                                         min={0}
                                                         max={100}
-                                                        size="sm"
                                                         style={{ flex: 1 }}
-                                                        m={'xs'}
+                                                        m={'sm'}
                                                     />
-                                                    <Text size="xs" w={40} ta="right">
+                                                    <Text size="sm" w={40}>
                                                         {zone.reduction}%
                                                     </Text>
                                                 </div>
                                             </td>
 
-                                            {/* OUTPUT CELL */}
-                                            <td style={{ textAlign: "right", fontWeight: 500 }}>
+                                            {/* New Zone Avg */}
+                                            <td style={{ fontWeight: 500, textAlign: 'center' }}>
                                                 {newZoneAvg.toFixed(1)}
                                             </td>
                                         </tr>
@@ -204,50 +209,50 @@ const Home = () => {
                     </div>
                 </Card>
 
-                {/* RESULT DASHBOARD */}
+                {/* RESULT SECTION */}
                 <Card
                     shadow="lg"
-                    mt="lg"
-                    p="md"
+                    mt="md"
+                    p="lg"
                     radius="lg"
                     withBorder
                     style={{ background: "#f8f9fa" }}
                 >
                     <Grid>
                         <Grid.Col span={3}>
-                            <Text size="xs" c="dimmed">
+                            <Text size="sm" c="dimmed">
                                 Total Population
                             </Text>
-                            <Text fw={700} size="lg">
-                                {result.totalPop.toFixed(1)}
+                            <Text fw={700} size="xl">
+                                {result.totalPop.toFixed(1)} millions
                             </Text>
                         </Grid.Col>
 
                         <Grid.Col span={3}>
-                            <Text size="xs" c="dimmed">
+                            <Text size="sm" c="dimmed">
                                 Pop. Weighted Conc
                             </Text>
-                            <Text fw={700} size="lg" c="blue">
-                                {result.oldAvg.toFixed(1)}
+                            <Text fw={700} size="xl" c="blue">
+                                {result.oldAvg.toFixed(1)} µg/m³
                             </Text>
                         </Grid.Col>
 
                         <Grid.Col span={3}>
-                            <Text size="xs" c="dimmed">
+                            <Text size="sm" c="dimmed">
                                 New Weighted Conc
                             </Text>
-                            <Text fw={700} size="lg" c="teal">
-                                {result.newAvg.toFixed(1)}
+                            <Text fw={700} size="xl" c="teal">
+                                {result.newAvg.toFixed(1)} µg/m³
                             </Text>
                         </Grid.Col>
 
                         <Grid.Col span={3}>
-                            <Text size="xs" c="dimmed">
+                            <Text size="sm" c="dimmed">
                                 Net Reduction
                             </Text>
                             <Text
                                 fw={700}
-                                size="lg"
+                                size="xl"
                                 c={result.netReduction > 0 ? "green" : "red"}
                             >
                                 {result.netReduction.toFixed(1)}%
@@ -258,7 +263,6 @@ const Home = () => {
             </Container>
 
             <Footer />
-
         </>
     );
 };
