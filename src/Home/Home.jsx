@@ -1,356 +1,266 @@
-import { Container, Text, Grid, Group, Button, Box, Input, Stack, Space, Drawer, Tooltip, Menu, Affix, Modal } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { Card, message, notification, Alert } from 'antd';
-import AddIcon from '@mui/icons-material/Add';
-import InfoIcon from '@mui/icons-material/Info';
-import RefreshTwoToneIcon from '@mui/icons-material/RefreshTwoTone';
-import LaunchIcon from '@mui/icons-material/Launch';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import JoditEditor from 'jodit-react';
-import './Home.css';
-import { useCallback, useState, useMemo, useEffect, useRef } from "react";
-import Footer from '../components/Footer/Footer';
+import { useState, useEffect } from "react";
+import {
+    Container,
+    Table,
+    NumberInput,
+    Slider,
+    Text,
+    Card,
+    Grid,
+} from "@mantine/core";
+import Footer from "../components/Footer/Footer";
 
-
-var arr = []; // store the session storage data.
-var uniqueValues = new Set();
 const Home = () => {
+    // Initialize 10 zones
+    const [zones, setZones] = useState(
+        Array.from({ length: 10 }, () => ({
+            pop: 0,
+            conc: 0,
+            reduction: 0,
+        }))
+    );
 
-    const [opened, { open, close }] = useDisclosure(false); // For Drawer
-    const [openedModel, { open: Modalopen, close: Modalclose }] = useDisclosure(false); // for Clear zone Modal
-    const [openedModelTwo, { open: ModalopenTwo, close: ModalcloseTwo }] = useDisclosure(false); // for Output Modal
-
-    const [api, contextHolder] = notification.useNotification();
-    const [zoneclickval, setzoneclickval] = useState(1);
-    const [Blankedinput, setblankedinput] = useState(true);
-    const [Showmenubar, setshowmenubar] = useState(true); // not show menu bar while click on output btn.
-    const [Isvalueexist, setisvalueexist] = useState(false);
-    const [Showaddzonebtn, setshowaddbtn] = useState(false);
-    const [Showoutputbtn, setshowoutputbtn] = useState(false);
-    const [NewZoneAvg, setNewZoneAvg] = useState(0.0); // For Store new zone avg;
-    const [Totalpop, settotalpop] = useState(0.0); // Store sum of zone  population.
-    const [Oldweightedavgconc, setoldweightedavgconc] = useState(0.0); // store old weighted avg conc. (Avg.conc * zone.pop)
-    const [Popwtconc, setpopwtconc] = useState(0.0); // Store the pop.wt.conc.ug/m3 (Old weighted / Total.pop.mil);
-    const [Newzoneweighted, setnewzoneweighted] = useState(0.0); // Store New zone weighted(new.zone.avg * zone.pop);
-    const [Newpopweight, setnewpopweight] = useState(0.0); // Store New.pop.wt.conc (Newzone weighted / total.pop.mil);
-    const [Netreduction, setnetreduction] = useState(0.0); // Store Net.reduction (pop.wt.conc / new.popwt.conc);
-
-    const [input, setinput] = useState({
-        Avgconc: "",
-        Zonepop: "",
-        Reduction: "",
+    const [result, setResult] = useState({
+        totalPop: 0,
+        oldAvg: 0,
+        newAvg: 0,
+        netReduction: 0,
     });
-    const Inputonchange = (e) => {
-        const { name, value } = e.target;
-        setinput({ ...input, [name]: value });
-    }
 
-    const [content, setContent] = useState('');
-    const [logs, setLogs] = useState([]);
-    const editor = useRef(null); // Reference to Jodit Editor
+    // Handle input change (SAFE)
+    const updateZone = (index, key, value) => {
+        const updated = [...zones];
+        updated[index][key] =
+            value === "" || value === null ? 0 : Number(value);
+        setZones(updated);
+    };
 
-    const appendLog = useCallback(
-        (message) => {
-            //console.log("logs = ", logs);
-            const newLogs = [...logs, message];
-            setLogs(newLogs);
-        },
-        [logs, setLogs]
-    );
+    // Auto calculation (CLEAN LOGIC - FIX 4)
+    useEffect(() => {
+        const totalPop = zones.reduce(
+            (sum, z) => sum + Number(z.pop || 0),
+            0
+        );
 
-    const config = useMemo(
-        () => ({
-            readonly: false
-        }),
-        []
-    );
-
-    const onChange = useCallback(
-        (newContent) => {
-            appendLog(`onChange triggered with ${newContent}`);
-        },
-        [appendLog]
-    );
-    const onBlur = useCallback(
-        (newContent) => {
-            appendLog(`onBlur triggered with ${newContent}`);
-            setContent(newContent);
-        },
-        [appendLog, setContent]
-    );
-
-    const ChangeZoneValue = () => { // Change the zone value function
-        if (zoneclickval >= 10) {
-            api['error']({
-                message: 'Error',
-                description:
-                    'You exceed the zone value. The range of zone value is 1 to 10 if, you want to add new zone so, please contact to developer.',
+        if (totalPop === 0) {
+            setResult({
+                totalPop: 0,
+                oldAvg: 0,
+                newAvg: 0,
+                netReduction: 0,
             });
             return;
         }
-        setzoneclickval(zoneclickval + 1);
-        setinput({
-            Avgconc: "",
-            Zonepop: "",
-            Reduction: "",
-        })
-        setshowaddbtn(false); // hide add btn
-        setshowoutputbtn(false); // hide output btn
-    }
 
-    const CalculateValueANDSavein_session_storage = (e) => { // Main function calculate the value and save in session storage.
-        e.preventDefault();
-        const { Avgconc, Zonepop, Reduction } = input;
-
-        if (Avgconc === "" || Zonepop === "" || Reduction === "") {
-            message.error("All inputs are required");
-            return;
-        }
-
-        setblankedinput(false);
-        setshowmenubar(false);
-        //ChangeZoneValue(); // Update the zone value when user clicks on calculate button (If, needed, then uncoment this line of code).
-
-        // Parse input values to floats
-        const parsedAvgconc = parseFloat(Avgconc);
-        const parsedZonepop = parseFloat(Zonepop);
-        const parsedReduction = parseFloat(Reduction);
-
-        // Ensure parsing succeeded
-        if (isNaN(parsedAvgconc) || isNaN(parsedZonepop) || isNaN(parsedReduction)) {
-            message.error("All inputs must be valid numbers");
-            return;
-        }
-        setshowoutputbtn(true); // show output btn
-
-        const removePercentage = parsedReduction / 100; // Converting percentage into decimal. 40.0/100 == 0.4;
-        const newZoneAvg = parsedAvgconc - (parsedAvgconc * removePercentage); // Formula to calculate New-zone-avg
-
-        // Compute intermediate values
-        const newTotalpop = parseFloat((Totalpop + parsedZonepop).toFixed(2));
-        const newOldweightedavgconc = parseFloat((Oldweightedavgconc + (parsedAvgconc * parsedZonepop)).toFixed(2));
-        const newPopwtconc = parseFloat((newOldweightedavgconc / newTotalpop).toFixed(2));
-        const newNewzoneweighted = parseFloat((Newzoneweighted + (newZoneAvg * parsedZonepop)).toFixed(2));
-        const newNewpopweight = parseFloat((newNewzoneweighted / newTotalpop).toFixed(2));
-        const newNetreduction = parseFloat((((newPopwtconc - newNewpopweight) / newPopwtconc) * 100).toFixed(2));
-
-        // Update state with new values
-        setNewZoneAvg(newZoneAvg);
-        settotalpop(newTotalpop);
-        setoldweightedavgconc(newOldweightedavgconc);
-        setpopwtconc(newPopwtconc);
-        setnewzoneweighted(newNewzoneweighted);
-        setnewpopweight(newNewpopweight);
-        setnetreduction(newNetreduction);
-
-        const zoneKey = `zone_${zoneclickval}`;
-        sessionStorage.setItem(
-            zoneKey,
-            `For Zone:- ${zoneclickval} ---> AvgConc:- ${input.Avgconc}, ZonePop:- ${input.Zonepop}, Reduction:- ${input.Reduction}. Calculated Answer Is :-  New.Zone.Avg is:- ${newZoneAvg}, Total.Pop.Mil:- ${newTotalpop}, Pop.Wt.Conc:- ${newPopwtconc}, New.Pop.Wt.Conc:- ${newNewpopweight}, Net.Reduction:- ${newNetreduction}`
+        const oldWeighted = zones.reduce(
+            (sum, z) =>
+                sum + Number(z.pop || 0) * Number(z.conc || 0),
+            0
         );
-        setshowaddbtn(true);
-    };
-    const GetAllZones = async () => { // Getting value from session storage.
 
-        uniqueValues.clear() // clear all the value first...
-        // Use a Set to store unique values
-        for (let i = 1; i <= 10; i++) {
-            const zoneKey = `zone_${i}`;
-            const zoneValue = sessionStorage.getItem(zoneKey);
-            if (zoneValue !== null) {
-                uniqueValues.add(zoneValue);
-            }
-        }
+        const newWeighted = zones.reduce((sum, z) => {
+            const pop = Number(z.pop || 0);
+            const conc = Number(z.conc || 0);
+            const reduction = Number(z.reduction || 0);
 
-        // Convert the Set to an array if needed
-        arr = Array.from(uniqueValues);
-        open()
-    }
-    const Clear_Session_Storage = async () => {// Clear session storage
-        const zoneKey = `zone_${1}`;
-        const IszoneValue = sessionStorage.getItem(zoneKey);
+            const newConc = conc - (conc * reduction) / 100;
 
-        if (IszoneValue !== null) {
-            for (let i = 1; i <= 10; i++) {
-                const zoneKey = `zone_${i}`;
-                sessionStorage.removeItem(zoneKey);
-            }
-            // Convert the Set to an array if needed
-        }
-        setisvalueexist(false); // Hide prev zone btn.
-        setshowaddbtn(false); // hide add btn
-        setshowoutputbtn(false); // hide output btn
-        setzoneclickval(1); // revert to zone 1
-        Modalclose(); // close the modal
-        message.success("All item's deleted");
-        message.info(
-            <span>
-                Please try to hard refresh <RefreshTwoToneIcon />, for better result.
-            </span>
-        );
-        return;
-    }
+            return sum + pop * newConc;
+        }, 0);
 
-    function Openoutputmodal() {
-        setshowmenubar(true);
-        ModalopenTwo();
-    }
-    useEffect(() => {
-        const zoneKey = `zone_${1}`;
-        const IszoneValue = sessionStorage.getItem(zoneKey);
-        //console.log(zoneValue);
-        if (IszoneValue !== null) {
-            for (let i = 1; i <= 10; i++) {
-                const zoneKey = `zone_${i}`;
-                const zoneValue = sessionStorage.getItem(zoneKey);
-                if (zoneValue !== null) {
-                    uniqueValues.add(zoneValue);
-                }
-            }
+        const oldAvg = oldWeighted / totalPop;
+        const newAvg = newWeighted / totalPop;
 
-            // Convert the Set to an array if needed
-            arr = Array.from(uniqueValues);
-            setisvalueexist(true);
-        }
-    }, [onChange, NewZoneAvg, Totalpop, Oldweightedavgconc, Popwtconc, Newzoneweighted, Newpopweight, Netreduction]);
+        const netReduction =
+            oldAvg === 0 ? 0 : ((oldAvg - newAvg) / oldAvg) * 100;
+
+        setResult({
+            totalPop,
+            oldAvg,
+            newAvg,
+            netReduction,
+        });
+    }, [zones]);
 
     return (
         <>
-            {contextHolder}
-            <Text size="xl" style={{ textAlign: "center" }}>-- AQ Simualtor V1-- </Text>
-            <Modal opened={openedModel} onClose={Modalclose} title="Are you sure want to clear all zone's records?" centered>
-                <Text>Deleted item(s) never revert back. Zone Size:- {arr.length}</Text>
-                <Group justify="flex-end">
-                    <Button color='red' mt={'md'} onClick={Clear_Session_Storage}>Yes, Delete All</Button>
-                </Group>
 
-            </Modal>
-            <Modal opened={openedModelTwo} onClose={ModalcloseTwo} title="Output Screen">
-                <Stack align="stretch"
-                    justify="center"
-                    gap="md">
-                    <Text size="md" tt="uppercase">Total population in (millions):- <Text c="teal.4">{Totalpop}</Text></Text>
-                    <Text size="md" tt="uppercase">population weighted concentration in (ug/m3(micrograms per cubic meter)):- <Text c="teal.4">{Popwtconc}</Text></Text>
-                    <Text size="md" tt="uppercase">New population weighted concentration:- <Text c="teal.4">{Newpopweight}</Text></Text>
-                    <Text size="md" tt="uppercase">Net reduction:- <Text c="teal.4">{`${Netreduction} %`}</Text></Text>
-                </Stack>
-            </Modal>
-            <Drawer opened={opened} onClose={close} title="Prev. Zone(s) Record's." offset={8} radius="md" position="right">
-                {
-                    arr.length ? arr.map((ele, idx) => {
-                        return (
-                            <>
-                                <Text mb={'md'} key={idx}>
-                                    {ele}
-                                </Text>
-                            </>
-                        )
-                    }) : "Nothing"
+            <Container size="xl" py="md">
+                <Text size="xl" fw={700} ta="center" mb="md">
+                    -- AQ Simulator V1 --
+                </Text>
 
-                }
-                <Affix position={{ bottom: 20, right: 20 }}>
-                    <Button variant='outline' color='red' onClick={Modalopen}>Clear all Prev Zone's</Button>
-                </Affix>
-            </Drawer>
-            <Space h="xl" />
-            <Container size={'lg'}>
-                {/* <Center> */}
-                <Card
-                    bordered={false}
-                    style={{
-                        width: 'auto',
-                        boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
-                    }}
-                >
-                    <Grid>
-                        <Grid.Col span={{ base: 12, md: 6, lg: 6 }} >
-                            <Card
-                                bordered={false}
+                {/* TABLE CARD */}
+                <Card shadow="md" p="md" radius="lg" withBorder>
+                    {/* <Text size="sm" c="dimmed" mb="xs">
+                        Green cells are inputs. Use sliders to adjust reduction.
+                    </Text> */}
+
+                    <div style={{ overflowX: "auto" }}>
+                        <Table
+                            striped
+                            highlightOnHover
+                            withColumnBorders
+                            verticalSpacing="sm"
+                        >
+                            <thead
                                 style={{
-                                    boxShadow: "rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px",
-                                    marginTop: '23px'
+                                    position: "sticky",
+                                    top: 0,
+                                    background: "#f8f9fa",
+                                    zIndex: 1,
                                 }}
                             >
-                                <Group justify="flex-end">
-                                    {Showaddzonebtn && <Button variant="outline" color="teal" rightSection={<AddIcon />} onClick={ChangeZoneValue}>Add New Zone</Button>}
-                                    {Isvalueexist && <Button variant="filled" color="indigo" rightSection={<LaunchIcon />} onClick={GetAllZones}>Prev Zone Input(s)</Button>}
-                                </Group>
-                                <Box mb={'md'}></Box>
+                                <tr>
+                                    <th>Zone</th>
+                                    <th>Population (mil)</th>
+                                    <th>Avg Conc (µg/m³)</th>
+                                    <th style={{ width: 220 }}>% Reduction</th>
+                                    <th>New Zone Avg</th>
+                                </tr>
+                            </thead>
 
-                                <Stack align="stretch"
-                                    justify="center"
-                                    gap="md">
-                                    <Text tt="uppercase" ta="center">Please Enter For Zone:- {zoneclickval}</Text>
+                            <tbody>
+                                {zones.map((zone, index) => {
+                                    const newZoneAvg =
+                                        Number(zone.conc || 0) -
+                                        (Number(zone.conc || 0) *
+                                            Number(zone.reduction || 0)) /
+                                        100;
 
-                                    <Input variant="default" size="md" radius="xl" placeholder="Please enter Average Concentration (ug/m3)" name='Avgconc' value={input.Avgconc} onChange={Inputonchange} />
-                                    <Input variant="default" size="md" radius="xl" placeholder="Please enter Zone Population (millions)" name='Zonepop' value={input.Zonepop} onChange={Inputonchange} />
-                                    <Input variant="default" size="md" radius="xl" placeholder="Please enter Reduction (%)" name='Reduction' value={input.Reduction} onChange={Inputonchange} />
+                                    return (
+                                        <tr key={index}>
+                                            <td style={{ fontWeight: 600 }}>
+                                                Z{index + 1}
+                                            </td>
 
-                                    <Menu width={500} shadow="md">
-                                        <Menu.Target>
-                                            <Group justify="space-between" grow>
-                                                <Button variant="light" radius="md" color="teal" rightSection={<ArrowDropDownIcon />} onClick={CalculateValueANDSavein_session_storage}>Calculate</Button>
+                                            {/* INPUT STYLE (GREEN LIKE EXCEL) */}
+                                            <td style={{ background: "#e6f4ea" }}>
+                                                <NumberInput
+                                                    value={zone.pop}
+                                                    min={0}
+                                                    hideControls
+                                                    styles={{
+                                                        input: {
+                                                            // textAlign: "right",
+                                                            // background: "transparent",
+                                                            border: "none",
+                                                        },
+                                                    }}
+                                                    onChange={(val) =>
+                                                        updateZone(index, "pop", val)
+                                                    }
+                                                />
+                                            </td>
 
-                                                {Showoutputbtn && <Button variant='subtle' radius="md" color="orange" onClick={Openoutputmodal}>Output</Button>}
-                                            </Group>
+                                            <td style={{ background: "#e6f4ea" }}>
+                                                <NumberInput
+                                                    value={zone.conc}
+                                                    min={0}
+                                                    hideControls
+                                                    styles={{
+                                                        input: {
+                                                            // textAlign: "right",
+                                                            // background: "transparent",
+                                                            border: "none",
 
-                                        </Menu.Target>
-                                        {
-                                            Blankedinput === false && Showmenubar === false && <Menu.Dropdown>
-                                                <Menu.Item>
-                                                    <Stack align="stretch"
-                                                        justify="center"
-                                                        gap="md">
-                                                        <Text size="xs">Toatl.pop.mil:- {Totalpop}</Text>
-                                                        <Text size="xs">Pop.wt.conc.ug/m3:- {Popwtconc}</Text>
-                                                        <Text size="xs">New.pop.wt.conc:- {Newpopweight}</Text>
-                                                        <Text size="xs">Net.reduction:- {Netreduction}</Text>
-                                                    </Stack>
-                                                </Menu.Item>
-                                            </Menu.Dropdown>
-                                        }
+                                                        },
+                                                    }}
+                                                    onChange={(val) =>
+                                                        updateZone(index, "conc", val)
+                                                    }
+                                                />
+                                            </td>
 
-                                    </Menu>
-                                    <Input.Wrapper description="The new average concentration after applying the reduction">
-                                        <Input variant="filled" size="md" radius="xl" value={`New Zone Average is:-  ${NewZoneAvg}`} disabled />
-                                    </Input.Wrapper>
+                                            {/* SLIDER UI */}
+                                            <td>
+                                                <div style={{ display: "flex", gap: 10 }}>
+                                                    <Slider
+                                                        value={zone.reduction}
+                                                        onChange={(val) =>
+                                                            updateZone(index, "reduction", val)
+                                                        }
+                                                        min={0}
+                                                        max={100}
+                                                        size="sm"
+                                                        style={{ flex: 1 }}
+                                                        m={'xs'}
+                                                    />
+                                                    <Text size="xs" w={40} ta="right">
+                                                        {zone.reduction}%
+                                                    </Text>
+                                                </div>
+                                            </td>
 
-                                </Stack>
-                            </Card>
-                            <Alert
-                                showIcon
-                                message="Remember"
-                                description="In the Reduction column, do not add '%'. Only enter numbers (e.g., 41.0, 40.0...)."
-                                type="info"
-                                style={{ marginTop: '20px' }}
-                            />
+                                            {/* OUTPUT CELL */}
+                                            <td style={{ textAlign: "right", fontWeight: 500 }}>
+                                                {newZoneAvg.toFixed(1)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </Table>
+                    </div>
+                </Card>
+
+                {/* RESULT DASHBOARD */}
+                <Card
+                    shadow="lg"
+                    mt="lg"
+                    p="md"
+                    radius="lg"
+                    withBorder
+                    style={{ background: "#f8f9fa" }}
+                >
+                    <Grid>
+                        <Grid.Col span={3}>
+                            <Text size="xs" c="dimmed">
+                                Total Population
+                            </Text>
+                            <Text fw={700} size="lg">
+                                {result.totalPop.toFixed(1)}
+                            </Text>
                         </Grid.Col>
-                        <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>
-                            <Group justify="flex-end">
-                                <Tooltip label="Text are not saved in any server." >
-                                    <InfoIcon sx={{ color: 'black' }} />
-                                </Tooltip>
-                            </Group>
 
-                            <JoditEditor
-                                ref={editor}
-                                value={content}
-                                config={config}
-                                tabIndex={1}
-                                onBlur={onBlur}
-                                onChange={onChange}
-                            />
+                        <Grid.Col span={3}>
+                            <Text size="xs" c="dimmed">
+                                Pop. Weighted Conc
+                            </Text>
+                            <Text fw={700} size="lg" c="blue">
+                                {result.oldAvg.toFixed(1)}
+                            </Text>
+                        </Grid.Col>
+
+                        <Grid.Col span={3}>
+                            <Text size="xs" c="dimmed">
+                                New Weighted Conc
+                            </Text>
+                            <Text fw={700} size="lg" c="teal">
+                                {result.newAvg.toFixed(1)}
+                            </Text>
+                        </Grid.Col>
+
+                        <Grid.Col span={3}>
+                            <Text size="xs" c="dimmed">
+                                Net Reduction
+                            </Text>
+                            <Text
+                                fw={700}
+                                size="lg"
+                                c={result.netReduction > 0 ? "green" : "red"}
+                            >
+                                {result.netReduction.toFixed(1)}%
+                            </Text>
                         </Grid.Col>
                     </Grid>
                 </Card>
-                {/* </Center> */}
-            </Container >
-            <Box mt={'lg'}>
-                <Footer />
-            </Box>
-        </>
-    )
-}
+            </Container>
 
+            <Footer />
+
+        </>
+    );
+};
 
 export default Home;
