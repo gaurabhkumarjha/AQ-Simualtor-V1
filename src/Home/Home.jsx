@@ -281,7 +281,7 @@ const Home = () => {
         </Text>
 
         <Grid>
-          <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
+          <Grid.Col span={{ base: 12, sm: 4, md: 4, lg: 4 }}>
             {/* 🔵 BASELINE CLUSTER */}
             <div>
               <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
@@ -352,7 +352,7 @@ const Home = () => {
               </div>
             </div>
           </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
+          <Grid.Col span={{ base: 12, sm: 4, md: 4, lg: 4 }}>
             <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
               % Reduction
             </Text>
@@ -384,7 +384,7 @@ const Home = () => {
               )
             })}
           </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
+          <Grid.Col span={{ base: 12, sm: 4, md: 4, lg: 4 }}>
             {/* 🟢 NEW VALUES CLUSTER */}
             <div>
               <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
