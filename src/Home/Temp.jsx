@@ -80,20 +80,20 @@ const Temp = () => {
   }, [zones]);
 
   // 🔥 Visualization logic
-  const visualZones = zones
-    .map((z, i) => {
-      const newZoneAvg =
-        Number(z.conc || 0) -
-        (Number(z.conc || 0) * Number(z.reduction || 0)) / 100;
+  // const visualZones = zones
+  //   .map((z, i) => {
+  //     const newZoneAvg =
+  //       Number(z.conc || 0) -
+  //       (Number(z.conc || 0) * Number(z.reduction || 0)) / 100;
 
-      return {
-        label: `Z${i + 1}`,
-        value: newZoneAvg,
-      };
-    })
-    .filter((z) => z.value > 0);
+  //     return {
+  //       label: `Z${i + 1}`,
+  //       value: newZoneAvg,
+  //     };
+  //   })
+  //   .filter((z) => z.value > 0);
 
-  const maxVal = Math.max(...visualZones.map((z) => z.value), 0);
+  //const maxVal = Math.max(...visualZones.map((z) => z.value), 0);
 
   return (
     <Container size="xl" py="md">
@@ -104,7 +104,7 @@ const Temp = () => {
       {/* TABLE */}
       <Card shadow="md" p="md" radius="lg" withBorder>
         <Text size="sm" c="dimmed" mb="xs">
-          Green cells are inputs. Use sliders to adjust reduction.
+          Green cells are inputs. Use sliders to adjust reduction. Scroll down for notes on how to use this simulator.
         </Text>
 
         <div style={{ overflowX: "auto" }}>
@@ -146,7 +146,7 @@ const Temp = () => {
 
                 return (
                   <tr key={index}>
-                    <td style={{ fontWeight: 600 }}>
+                    <td style={{ fontWeight: 600, textAlign: 'center' }}>
                       Z{index + 1}
                     </td>
 
@@ -274,73 +274,258 @@ const Temp = () => {
       </Card>
 
       {/* 🔥 VISUALIZATION SECTION */}
-      <Card shadow="lg"
-        mt="md"
-        p="lg"
-        radius="lg"
-        withBorder style={{ background: "#f8f9fa" }}>
+      {/* 🔥 VISUALIZATION SECTION */}
+      <Card mt="md" p="xl" radius="lg" withBorder>
+        <Text fw={600} mb="xl" ta="center" size="lg">
+          Zone Comparison Visualization
+        </Text>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px" }}>
+
+          {/* 🔵 BASELINE CLUSTER */}
+          <div>
+            <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
+              Baseline (Before Reduction)
+            </Text>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "10px",
+                minHeight: "300px",
+                padding: "20px",
+                background: "rgba(0,0,0,0.02)",
+                borderRadius: "16px",
+                alignContent: "center"
+              }}
+            >
+              {zones.map((z, i) => {
+                const value = Number(z.conc || 0);
+                const maxVal = Math.max(...zones.map((z) => Number(z.conc || 0)), 1);
+                // Scaled size to feel more like the sketch
+                const size = (value / maxVal) * 100 + 60;
+                const gradients = [
+                  "linear-gradient(135deg, #4dabf7, #228be6)",
+                  "linear-gradient(135deg, #51cf66, #2f9e44)",
+                  "linear-gradient(135deg, #ffd43b, #fab005)",
+                  "linear-gradient(135deg, #ff6b6b, #c92a2a)",
+                  "linear-gradient(135deg, #845ef7, #5f3dc4)",
+                  "linear-gradient(135deg, #20c997, #0ca678)",
+                  "linear-gradient(135deg, #66d9e8, #089bab)",
+                  "linear-gradient(135deg, #f783ac, #c2255c)",
+                  "linear-gradient(135deg, #fcc419, #f08c00)",
+                ];
+
+                return (
+                  <div
+                    key={i}
+                    title={`Z${i + 1} → ${value.toFixed(1)} µg/m³`}
+                    style={{
+                      width: size,
+                      height: size,
+                      borderRadius: "50%",
+                      background: gradients[i % gradients.length],
+                      //background: "linear-gradient(135deg, #74c0fc, #1971c2)",
+                      display: value > 0 ? "flex" : "none",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#fff",
+                      fontWeight: "bold",
+                      fontSize: size / 6,
+                      boxShadow: "0px 8px 20px rgba(25, 113, 194, 0.3)",
+                      transition: "transform 0.3s ease",
+                      cursor: "default",
+                      border: "2px solid #fff",
+                      textAlign: "center"
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    <span>Z{i + 1}</span>
+                    <span style={{ fontSize: '0.8em', opacity: 0.9 }}>{Math.round(value)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 🟢 NEW VALUES CLUSTER */}
+          <div>
+            <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
+              After Reduction
+            </Text>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "10px",
+                minHeight: "300px",
+                padding: "20px",
+                background: "rgba(0,0,0,0.02)",
+                borderRadius: "16px",
+                alignContent: "center"
+              }}
+            >
+              {zones.map((z, i) => {
+                const newVal = Number(z.conc || 0) - (Number(z.conc || 0) * Number(z.reduction || 0)) / 100;
+                const maxVal = Math.max(...zones.map((z) => Number(z.conc || 0)), 1); // Keep scale consistent with baseline
+                const size = (newVal / maxVal) * 100 + 60;
+                const gradients = [
+                  "linear-gradient(135deg, #4dabf7, #228be6)",
+                  "linear-gradient(135deg, #51cf66, #2f9e44)",
+                  "linear-gradient(135deg, #ffd43b, #fab005)",
+                  "linear-gradient(135deg, #ff6b6b, #c92a2a)",
+                  "linear-gradient(135deg, #845ef7, #5f3dc4)",
+                  "linear-gradient(135deg, #20c997, #0ca678)",
+                  "linear-gradient(135deg, #66d9e8, #089bab)",
+                  "linear-gradient(135deg, #f783ac, #c2255c)",
+                  "linear-gradient(135deg, #fcc419, #f08c00)",
+                ];
+                return (
+                  <div
+                    key={i}
+                    title={`Z${i + 1} → ${newVal.toFixed(1)} µg/m³`}
+                    style={{
+                      width: size,
+                      height: size,
+                      borderRadius: "50%",
+                      background: gradients[i % gradients.length],
+                      display: newVal > 0 ? "flex" : "none",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#fff",
+                      fontWeight: "bold",
+                      fontSize: size / 6,
+                      boxShadow: "0px 8px 20px rgba(43, 138, 62, 0.3)",
+                      transition: "transform 0.3s ease",
+                      cursor: "default",
+                      border: "2px solid #fff",
+                      textAlign: "center"
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    <span>Z{i + 1}</span>
+                    <span style={{ fontSize: '0.8em', opacity: 0.9 }}>{Math.round(newVal)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </Card>
+      {/* <Card mt="md" p="lg" radius="lg" withBorder>
         <Text fw={600} mb="md" ta="center" size="lg">
-          Zone Visualization
+          Zone Comparison Visualization
+        </Text>
+
+        {/* 🔵 BASELINE ROW 
+        <Text size="sm" mb="xs" c="dimmed">
+          Baseline (Before Reduction)
         </Text>
 
         <div
           style={{
             display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "30px",
-            minHeight: "200px",
+            overflowX: "auto",
+            paddingBottom: "10px",
+            gap: "10px",
           }}
         >
-          {visualZones.map((z, i) => {
-            const size =
-              maxVal === 0
-                ? 60
-                : (z.value / maxVal) * 120 + 60; // better scaling
+          {zones.map((z, i) => {
+            const value = Number(z.conc || 0);
+            const maxVal = Math.max(
+              ...zones.map((z) => Number(z.conc || 0)),
+              1
+            );
 
-            const gradients = [
-              "linear-gradient(135deg, #4dabf7, #228be6)",
-              "linear-gradient(135deg, #51cf66, #2f9e44)",
-              "linear-gradient(135deg, #ffd43b, #fab005)",
-              "linear-gradient(135deg, #ff6b6b, #c92a2a)",
-              "linear-gradient(135deg, #845ef7, #5f3dc4)",
-              "linear-gradient(135deg, #20c997, #0ca678)",
-            ];
+            const size = (value / maxVal) * 80 + 40;
 
             return (
               <div
                 key={i}
-                title={`${z.label} → ${z.value.toFixed(1)} µg/m³`}
+                title={`Z${i + 1} → ${value} µg/m³`}
                 style={{
-                  width: size,
+                  minWidth: size,
                   height: size,
                   borderRadius: "50%",
-                  background: gradients[i % gradients.length],
+                  background: "linear-gradient(135deg, #74c0fc, #1971c2)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "#fff",
                   fontWeight: "bold",
                   fontSize: size / 5,
-                  boxShadow:
-                    "0px 10px 25px rgba(0,0,0,0.2), inset 0px -5px 10px rgba(0,0,0,0.2)",
+                  boxShadow: "0px 6px 15px rgba(0,0,0,0.2)",
                   transition: "all 0.4s ease",
-                  cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
                 }}
               >
-                {z.label}-{Math.round(z.value)}
+                Z{i + 1}-{Math.round(value)}
               </div>
             );
           })}
         </div>
-      </Card>
+
+        {/* 🟢 NEW VALUES ROW 
+        <Text size="sm" mt="md" mb="xs" c="dimmed">
+          After Reduction
+        </Text>
+
+        <div
+          style={{
+            display: "flex",
+            overflowX: "auto",
+            paddingBottom: "10px",
+            gap: "10px",
+          }}
+        >
+          {zones.map((z, i) => {
+            const newVal =
+              Number(z.conc || 0) -
+              (Number(z.conc || 0) * Number(z.reduction || 0)) / 100;
+
+            const maxVal = Math.max(
+              ...zones.map(
+                (z) =>
+                  Number(z.conc || 0) -
+                  (Number(z.conc || 0) * Number(z.reduction || 0)) / 100
+              ),
+              1
+            );
+
+            const size = (newVal / maxVal) * 80 + 40;
+
+            return (
+              <div
+                key={i}
+                title={`Z${i + 1} → ${newVal.toFixed(1)} µg/m³`}
+                style={{
+                  minWidth: size,
+                  height: size,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #69db7c, #2b8a3e)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  fontSize: size / 5,
+                  boxShadow: "0px 6px 15px rgba(0,0,0,0.2)",
+                  transition: "all 0.4s ease",
+                }}
+              >
+                Z{i + 1}-{Math.round(newVal)}
+              </div>
+            );
+          })}
+        </div>
+      </Card> */}
     </Container>
   );
 };
