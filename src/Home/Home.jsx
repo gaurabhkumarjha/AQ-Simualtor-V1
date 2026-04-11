@@ -323,8 +323,8 @@ const Home = () => {
                       key={i}
                       title={`Z${i + 1} → ${value.toFixed(1)} µg/m³`}
                       style={{
-                        width: size,
-                        height: size,
+                        width: size/2,
+                        height: size/2,
                         borderRadius: "50%",
                         background: gradients[i % gradients.length],
                         //background: "linear-gradient(135deg, #74c0fc, #1971c2)",
@@ -334,7 +334,7 @@ const Home = () => {
                         justifyContent: "center",
                         color: "#fff",
                         fontWeight: "bold",
-                        fontSize: size / 6,
+                        fontSize: size / 8,
                         boxShadow: "0px 8px 20px rgba(25, 113, 194, 0.3)",
                         transition: "transform 0.3s ease",
                         cursor: "default",
@@ -374,8 +374,6 @@ const Home = () => {
                     max={99}
                     style={{ flex: 1 }}
                     m={'sm'}
-                    size={'lg'}
-
                   />
                   <Text size="sm" w={40}>
                     {zone.reduction}%
@@ -424,8 +422,8 @@ const Home = () => {
                       key={i}
                       title={`Z${i + 1} → ${newVal.toFixed(1)} µg/m³`}
                       style={{
-                        width: size,
-                        height: size,
+                        width: size/2,
+                        height: size/2,
                         borderRadius: "50%",
                         background: gradients[i % gradients.length],
                         display: newVal > 0 ? "flex" : "none",
@@ -434,7 +432,7 @@ const Home = () => {
                         justifyContent: "center",
                         color: "#fff",
                         fontWeight: "bold",
-                        fontSize: size / 6,
+                        fontSize: size / 8,
                         boxShadow: "0px 8px 20px rgba(43, 138, 62, 0.3)",
                         transition: "transform 0.3s ease",
                         cursor: "default",
