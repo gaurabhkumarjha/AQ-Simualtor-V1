@@ -14,8 +14,8 @@ import {
 const Home = () => {
   const [zones, setZones] = useState(
     Array.from({ length: 10 }, () => ({
-      pop: 0,
-      conc: 0,
+      pop: 1.0,
+      conc: 40,
       reduction: 0,
     }))
   );
@@ -199,7 +199,7 @@ const Home = () => {
                             updateZone(index, "reduction", val)
                           }
                           min={0}
-                          max={100}
+                          max={99}
                           style={{ flex: 1 }}
                           m={'sm'}
                         />
@@ -274,150 +274,185 @@ const Home = () => {
       </Card>
 
       {/* 🔥 VISUALIZATION SECTION */}
+
       <Card mt="md" p="xl" radius="lg" withBorder>
         <Text fw={600} mb="xl" ta="center" size="lg">
           Zone Comparison Visualization
         </Text>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px" }}>
+        <Grid>
+          <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
+            {/* 🔵 BASELINE CLUSTER */}
+            <div>
+              <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
+                Baseline (Before Reduction)
+              </Text>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "10px",
+                  minHeight: "300px",
+                  padding: "20px",
+                  background: "rgba(0,0,0,0.02)",
+                  borderRadius: "16px",
+                  alignContent: "center"
+                }}
+              >
+                {zones.map((z, i) => {
+                  const value = Number(z.conc || 0);
+                  const maxVal = Math.max(...zones.map((z) => Number(z.conc || 0)), 1);
+                  // Scaled size to feel more like the sketch
+                  const size = (value / maxVal) * 100 + 60;
+                  const gradients = [
+                    "linear-gradient(135deg, #4dabf7, #228be6)",
+                    "linear-gradient(135deg, #51cf66, #2f9e44)",
+                    "linear-gradient(135deg, #ffd43b, #fab005)",
+                    "linear-gradient(135deg, #ff6b6b, #c92a2a)",
+                    "linear-gradient(135deg, #845ef7, #5f3dc4)",
+                    "linear-gradient(135deg, #20c997, #0ca678)",
+                    "linear-gradient(135deg, #66d9e8, #089bab)",
+                    "linear-gradient(135deg, #f783ac, #c2255c)",
+                    "linear-gradient(135deg, #fcc419, #f08c00)",
+                  ];
 
-          {/* 🔵 BASELINE CLUSTER */}
-          <div>
-            <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
-              Baseline (Before Reduction)
-            </Text>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: "10px",
-                minHeight: "300px",
-                padding: "20px",
-                background: "rgba(0,0,0,0.02)",
-                borderRadius: "16px",
-                alignContent: "center"
-              }}
-            >
-              {zones.map((z, i) => {
-                const value = Number(z.conc || 0);
-                const maxVal = Math.max(...zones.map((z) => Number(z.conc || 0)), 1);
-                // Scaled size to feel more like the sketch
-                const size = (value / maxVal) * 100 + 60;
-                const gradients = [
-                  "linear-gradient(135deg, #4dabf7, #228be6)",
-                  "linear-gradient(135deg, #51cf66, #2f9e44)",
-                  "linear-gradient(135deg, #ffd43b, #fab005)",
-                  "linear-gradient(135deg, #ff6b6b, #c92a2a)",
-                  "linear-gradient(135deg, #845ef7, #5f3dc4)",
-                  "linear-gradient(135deg, #20c997, #0ca678)",
-                  "linear-gradient(135deg, #66d9e8, #089bab)",
-                  "linear-gradient(135deg, #f783ac, #c2255c)",
-                  "linear-gradient(135deg, #fcc419, #f08c00)",
-                ];
-
-                return (
-                  <div
-                    key={i}
-                    title={`Z${i + 1} → ${value.toFixed(1)} µg/m³`}
-                    style={{
-                      width: size,
-                      height: size,
-                      borderRadius: "50%",
-                      background: gradients[i % gradients.length],
-                      //background: "linear-gradient(135deg, #74c0fc, #1971c2)",
-                      display: value > 0 ? "flex" : "none",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontWeight: "bold",
-                      fontSize: size / 6,
-                      boxShadow: "0px 8px 20px rgba(25, 113, 194, 0.3)",
-                      transition: "transform 0.3s ease",
-                      cursor: "default",
-                      border: "2px solid #fff",
-                      textAlign: "center"
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                  >
-                    <span>Z{i + 1}</span>
-                    <span style={{ fontSize: '0.8em', opacity: 0.9 }}>{Math.round(value)}</span>
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={i}
+                      title={`Z${i + 1} → ${value.toFixed(1)} µg/m³`}
+                      style={{
+                        width: size,
+                        height: size,
+                        borderRadius: "50%",
+                        background: gradients[i % gradients.length],
+                        //background: "linear-gradient(135deg, #74c0fc, #1971c2)",
+                        display: value > 0 ? "flex" : "none",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: size / 6,
+                        boxShadow: "0px 8px 20px rgba(25, 113, 194, 0.3)",
+                        transition: "transform 0.3s ease",
+                        cursor: "default",
+                        border: "2px solid #fff",
+                        textAlign: "center"
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    >
+                      <span>Z{i + 1}</span>
+                      <span style={{ fontSize: '0.8em', opacity: 0.9 }}>{Math.round(value)}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-
-          {/* 🟢 NEW VALUES CLUSTER */}
-          <div>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
             <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
-              After Reduction
+              % Reduction
             </Text>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: "10px",
-                minHeight: "300px",
-                padding: "20px",
-                background: "rgba(0,0,0,0.02)",
-                borderRadius: "16px",
-                alignContent: "center"
-              }}
-            >
-              {zones.map((z, i) => {
-                const newVal = Number(z.conc || 0) - (Number(z.conc || 0) * Number(z.reduction || 0)) / 100;
-                const maxVal = Math.max(...zones.map((z) => Number(z.conc || 0)), 1); // Keep scale consistent with baseline
-                const size = (newVal / maxVal) * 100 + 60;
-                const gradients = [
-                  "linear-gradient(135deg, #4dabf7, #228be6)",
-                  "linear-gradient(135deg, #51cf66, #2f9e44)",
-                  "linear-gradient(135deg, #ffd43b, #fab005)",
-                  "linear-gradient(135deg, #ff6b6b, #c92a2a)",
-                  "linear-gradient(135deg, #845ef7, #5f3dc4)",
-                  "linear-gradient(135deg, #20c997, #0ca678)",
-                  "linear-gradient(135deg, #66d9e8, #089bab)",
-                  "linear-gradient(135deg, #f783ac, #c2255c)",
-                  "linear-gradient(135deg, #fcc419, #f08c00)",
-                ];
-                return (
-                  <div
-                    key={i}
-                    title={`Z${i + 1} → ${newVal.toFixed(1)} µg/m³`}
-                    style={{
-                      width: size,
-                      height: size,
-                      borderRadius: "50%",
-                      background: gradients[i % gradients.length],
-                      display: newVal > 0 ? "flex" : "none",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontWeight: "bold",
-                      fontSize: size / 6,
-                      boxShadow: "0px 8px 20px rgba(43, 138, 62, 0.3)",
-                      transition: "transform 0.3s ease",
-                      cursor: "default",
-                      border: "2px solid #fff",
-                      textAlign: "center"
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                  >
-                    <span>Z{i + 1}</span>
-                    <span style={{ fontSize: '0.8em', opacity: 0.9 }}>{Math.round(newVal)}</span>
-                  </div>
-                );
-              })}
+            {zones.map((zone, index) => {
+              // const newZoneAvg =
+              //   Number(zone.conc || 0) -
+              //   (Number(zone.conc || 0) *
+              //     Number(zone.reduction || 0)) /
+              //   100;
+
+              return (
+                <div style={{ display: "flex", gap: 10 }}>
+                  <Slider
+                    value={zone.reduction}
+                    onChange={(val) =>
+                      updateZone(index, "reduction", val)
+                    }
+                    min={0}
+                    max={99}
+                    style={{ flex: 1 }}
+                    m={'sm'}
+                    size={'lg'}
+
+                  />
+                  <Text size="sm" w={40}>
+                    {zone.reduction}%
+                  </Text>
+                </div>
+              )
+            })}
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
+            {/* 🟢 NEW VALUES CLUSTER */}
+            <div>
+              <Text size="sm" mb="md" c="dimmed" ta="center" fw={500}>
+                After Reduction
+              </Text>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "10px",
+                  minHeight: "300px",
+                  padding: "20px",
+                  background: "rgba(0,0,0,0.02)",
+                  borderRadius: "16px",
+                  alignContent: "center"
+                }}
+              >
+                {zones.map((z, i) => {
+                  const newVal = Number(z.conc || 0) - (Number(z.conc || 0) * Number(z.reduction || 0)) / 100;
+                  const maxVal = Math.max(...zones.map((z) => Number(z.conc || 0)), 1); // Keep scale consistent with baseline
+                  const size = (newVal / maxVal) * 100 + 60;
+                  const gradients = [
+                    "linear-gradient(135deg, #4dabf7, #228be6)",
+                    "linear-gradient(135deg, #51cf66, #2f9e44)",
+                    "linear-gradient(135deg, #ffd43b, #fab005)",
+                    "linear-gradient(135deg, #ff6b6b, #c92a2a)",
+                    "linear-gradient(135deg, #845ef7, #5f3dc4)",
+                    "linear-gradient(135deg, #20c997, #0ca678)",
+                    "linear-gradient(135deg, #66d9e8, #089bab)",
+                    "linear-gradient(135deg, #f783ac, #c2255c)",
+                    "linear-gradient(135deg, #fcc419, #f08c00)",
+                  ];
+                  return (
+                    <div
+                      key={i}
+                      title={`Z${i + 1} → ${newVal.toFixed(1)} µg/m³`}
+                      style={{
+                        width: size,
+                        height: size,
+                        borderRadius: "50%",
+                        background: gradients[i % gradients.length],
+                        display: newVal > 0 ? "flex" : "none",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: size / 6,
+                        boxShadow: "0px 8px 20px rgba(43, 138, 62, 0.3)",
+                        transition: "transform 0.3s ease",
+                        cursor: "default",
+                        border: "2px solid #fff",
+                        textAlign: "center"
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    >
+                      <span>Z{i + 1}</span>
+                      <span style={{ fontSize: '0.8em', opacity: 0.9 }}>{Math.round(newVal)}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </div>
+          </Grid.Col>
+        </Grid>
       </Card>
     </Container>
   );
