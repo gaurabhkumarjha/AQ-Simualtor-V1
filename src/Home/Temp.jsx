@@ -9,8 +9,9 @@ import {
   Grid,
 } from "@mantine/core";
 
+
+
 const Temp = () => {
-  // 10 zones
   const [zones, setZones] = useState(
     Array.from({ length: 10 }, () => ({
       pop: 0,
@@ -26,7 +27,6 @@ const Temp = () => {
     netReduction: 0,
   });
 
-  // Update input
   const updateZone = (index, key, value) => {
     const updated = [...zones];
     updated[index][key] =
@@ -34,7 +34,6 @@ const Temp = () => {
     setZones(updated);
   };
 
-  // Calculation (unchanged logic)
   useEffect(() => {
     const totalPop = zones.reduce(
       (sum, z) => sum + Number(z.pop || 0),
@@ -63,7 +62,6 @@ const Temp = () => {
       const reduction = Number(z.reduction || 0);
 
       const newConc = conc - (conc * reduction) / 100;
-
       return sum + pop * newConc;
     }, 0);
 
@@ -80,6 +78,22 @@ const Temp = () => {
       netReduction,
     });
   }, [zones]);
+
+  // 🔥 Visualization logic
+  const visualZones = zones
+    .map((z, i) => {
+      const newZoneAvg =
+        Number(z.conc || 0) -
+        (Number(z.conc || 0) * Number(z.reduction || 0)) / 100;
+
+      return {
+        label: `Z${i + 1}`,
+        value: newZoneAvg,
+      };
+    })
+    .filter((z) => z.value > 0);
+
+  const maxVal = Math.max(...visualZones.map((z) => z.value), 0);
 
   return (
     <Container size="xl" py="md">
@@ -128,7 +142,7 @@ const Temp = () => {
                   Number(zone.conc || 0) -
                   (Number(zone.conc || 0) *
                     Number(zone.reduction || 0)) /
-                    100;
+                  100;
 
                 return (
                   <tr key={index}>
@@ -196,7 +210,7 @@ const Temp = () => {
                     </td>
 
                     {/* New Zone Avg */}
-                    <td style={{ fontWeight: 500, textAlign: 'center'}}>
+                    <td style={{ fontWeight: 500, textAlign: 'center' }}>
                       {newZoneAvg.toFixed(1)}
                     </td>
                   </tr>
@@ -207,10 +221,10 @@ const Temp = () => {
         </div>
       </Card>
 
-      {/* RESULT SECTION */}
+      {/* RESULTS */}
       <Card
         shadow="lg"
-        mt="lg"
+        mt="md"
         p="lg"
         radius="lg"
         withBorder
@@ -222,7 +236,7 @@ const Temp = () => {
               Total Population
             </Text>
             <Text fw={700} size="xl">
-              {result.totalPop.toFixed(1)} millions 
+              {result.totalPop.toFixed(1)} millions
             </Text>
           </Grid.Col>
 
@@ -257,6 +271,75 @@ const Temp = () => {
             </Text>
           </Grid.Col>
         </Grid>
+      </Card>
+
+      {/* 🔥 VISUALIZATION SECTION */}
+      <Card shadow="lg"
+        mt="md"
+        p="lg"
+        radius="lg"
+        withBorder style={{ background: "#f8f9fa" }}>
+        <Text fw={600} mb="md" ta="center" size="lg">
+          Zone Visualization
+        </Text>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "30px",
+            minHeight: "200px",
+          }}
+        >
+          {visualZones.map((z, i) => {
+            const size =
+              maxVal === 0
+                ? 60
+                : (z.value / maxVal) * 120 + 60; // better scaling
+
+            const gradients = [
+              "linear-gradient(135deg, #4dabf7, #228be6)",
+              "linear-gradient(135deg, #51cf66, #2f9e44)",
+              "linear-gradient(135deg, #ffd43b, #fab005)",
+              "linear-gradient(135deg, #ff6b6b, #c92a2a)",
+              "linear-gradient(135deg, #845ef7, #5f3dc4)",
+              "linear-gradient(135deg, #20c997, #0ca678)",
+            ];
+
+            return (
+              <div
+                key={i}
+                title={`${z.label} → ${z.value.toFixed(1)} µg/m³`}
+                style={{
+                  width: size,
+                  height: size,
+                  borderRadius: "50%",
+                  background: gradients[i % gradients.length],
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  fontSize: size / 5,
+                  boxShadow:
+                    "0px 10px 25px rgba(0,0,0,0.2), inset 0px -5px 10px rgba(0,0,0,0.2)",
+                  transition: "all 0.4s ease",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
+                {z.label}-{Math.round(z.value)}
+              </div>
+            );
+          })}
+        </div>
       </Card>
     </Container>
   );
