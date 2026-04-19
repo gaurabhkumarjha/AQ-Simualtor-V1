@@ -279,7 +279,9 @@ const Home = () => {
         <Text fw={600} mb="xl" ta="center" size="lg">
           Zone Comparison Visualization
         </Text>
-
+         <Text size="sm" c="dimmed" mb="xs">
+          Circles are scaled to the highest value in the baseline.
+        </Text>
         <Grid>
           <Grid.Col span={{ base: 12, sm: 4, md: 4, lg: 4 }}>
             {/* 🔵 BASELINE CLUSTER */}
